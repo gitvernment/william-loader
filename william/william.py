@@ -21,6 +21,9 @@ HOUSE_CONFEREES_XPATH = '//*[@id="cellComm1Conferees"]'
 SENATE_CONFEREES_XPATH = '//*[@id="cellComm2Conferees"]'
 
 
+def clean_string(string):
+    return string.strip().lower().replace(' ', '_')
+
 def retrieve_element_or_not(driver, xpath, altering_func=None):
     try:
         result = driver.find_element_by_xpath(xpath).text
@@ -45,7 +48,7 @@ def parse_action_table(action_table):
         row[0] = '{} {}'.format(row[0], row[1])
         row.pop(1)
         for index, val in enumerate(row):
-            row_data[data[0][index]] = val
+            row_data[clean_string(data[0][index])] = val
         action_info.append(row_data)
 
     return action_info
@@ -61,12 +64,12 @@ def parse_committee_table(committee_table):
             data.append([td.text.strip() for td in tds])
     for row in [d for d in data if len(d) > 1]:
         if row[0] != 'Vote:':
-            committee_info[row[0].replace(':', '').strip()] = row[1]
+            committee_info[clean_string(row[0]).replace(':', '')] = row[1]
         else:
             vote_info = row[1].split('  ')
             for vote_type in vote_info:
                 t, val = vote_type.split('=')
-                vote_data[t.strip()] = val
+                vote_data[clean_string(t)] = val
     committee_name = committee_info.get('House Committee') or committee_info.get('Senate Committee') or ''
     committee_status = committee_info.get('Status')
 
