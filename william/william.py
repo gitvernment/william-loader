@@ -119,6 +119,7 @@ def retrieve_bill_info(driver, bill_number, session='85R'):
 
     bill = Bill(
         identifier=bill_number,
+        url=url,
         session=session,
         last_action=last_action,
         version=version,

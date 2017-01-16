@@ -1,6 +1,7 @@
 class Bill:
     def __init__(self,
                  identifier,
+                 url,
                  session,
                  last_action,
                  version,
@@ -14,6 +15,7 @@ class Bill:
                  house_conferees=None,
                  senate_conferees=None):
         self.identifier = identifier
+        self.url = url,
         self.session = session
         self.last_action = last_action
         self.version = version
