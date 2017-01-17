@@ -61,15 +61,19 @@ if __name__ == "__main__":
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     driver = webdriver.PhantomJS('./webdrivers/phantomjs-mac')
-    for side in ('HB', 'SB'):
-        for x in range(1, 10000):
-            sleep(5)
+    driver.set_page_load_timeout(30)
+    for side in ['SB', 'HB']:
+        print('starting with the {}s'.format(side))
+        for x in range(1, 10):
+            bill_identifier = '{}{}'.format(side, x)
             if number_of_redirects > 50:
                 break
 
-            bill = william.retrieve_bill_info(driver, '{}{}'.format(side, x))
+            bill = william.retrieve_bill_info(driver, bill_identifier)
             if not bill:
+                print('Nothing found for bill {}'.format(bill_identifier))
                 number_of_redirects += 1
+                continue
             else:
                 number_of_redirects = 0
                 cur.execute("select * from bills where identifier = %s and archived is null", [bill.identifier])
@@ -85,5 +89,7 @@ if __name__ == "__main__":
                         insert_bill(cur, conn, bill)
                 else:
                     insert_bill(cur, conn, bill)
+                print('successfully processed bill {}'.format(bill_identifier))
+                sleep(2.5)
 
     driver.quit()

@@ -1,7 +1,7 @@
 import re
 
 import requests
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 from .models import Bill
 
@@ -88,10 +88,13 @@ def modify_conferees(conferee_data):
 
 def retrieve_bill_info(driver, bill_number, session='85R'):
     url = 'http://www.legis.state.tx.us/BillLookup/History.aspx?LegSess={}&Bill={}'.format(session, bill_number)
-    res = requests.get(url)
+    try:
+        res = requests.get(url)
+    except TimeoutException:
+        return None
+
     if len(res.history):
         # the state redirects to the search page when you enter a bill that doesn't exist.
-        print("Bill doesn't exist")
         return None
 
     driver.get(url)
