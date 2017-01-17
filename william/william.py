@@ -5,9 +5,10 @@ from selenium.common.exceptions import NoSuchElementException
 
 from .models import Bill
 
-LAST_ACTION_XPATH = '// *[ @ id = "cellLastAction"]'
+LAST_ACTION_XPATH = '//*[@id="cellLastAction"]'
 VERSION_XPATH = '//*[@id="cellCaptionVersion"]'
 SUMMARY_XPATH = '//*[@id="cellCaptionText"]'
+SUBJECT_XPATH = '//*[@id="cellSubjects"]'
 
 ACTION_TABLE_XPATH = '//*[@id="usrBillInfoActions_tblActions"]/following::table'
 HOUSE_COMMITTEE_TABLE_XPATH = '//*[@id="tblComm1Committee"]/tbody/tr'
@@ -101,8 +102,10 @@ def retrieve_bill_info(driver, bill_number, session='85R'):
 
     authors = driver.find_element_by_xpath(AUTHORS_XPATH).text.split('|')
 
-    action_table = driver.find_element_by_xpath(ACTION_TABLE_XPATH).find_elements_by_tag_name('tr')
-    action_info = parse_action_table(action_table)
+    # action_table = driver.find_element_by_xpath(ACTION_TABLE_XPATH).find_elements_by_tag_name('tr')
+    # action_info = parse_action_table(action_table)
+
+    subjects = driver.find_element_by_xpath(SUBJECT_XPATH).text.split('<br>')
 
     # unreliable elements
     coauthors = retrieve_element_or_not(driver, COAUTHORS_XPATH, altering_func=modify_conferees)
@@ -124,7 +127,8 @@ def retrieve_bill_info(driver, bill_number, session='85R'):
         last_action=last_action,
         version=version,
         summary=summary,
-        action_info=action_info,
+        subjects=subjects,
+        # action_info=action_info,
         authors=authors,
         coauthors=coauthors,
         sponsors=sponsors,

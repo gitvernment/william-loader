@@ -6,7 +6,8 @@ class Bill:
                  last_action,
                  version,
                  summary,
-                 action_info,
+                 subjects,
+                #  action_info,
                  authors,
                  coauthors=None,
                  sponsors=None,
@@ -20,8 +21,9 @@ class Bill:
         self.last_action = last_action
         self.version = version
         self.summary = summary
+        self.subjects = subjects
         self.authors = authors
-        self.action_info = action_info
+        # self.action_info = action_info
         self.coauthors = coauthors
         self.sponsors = sponsors
         self.house_committee_data = house_committee_data
