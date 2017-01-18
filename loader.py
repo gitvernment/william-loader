@@ -1,6 +1,7 @@
 import json
 import os
 from time import sleep
+from sys import platform
 
 import psycopg2
 import psycopg2.extras
@@ -60,36 +61,49 @@ if __name__ == "__main__":
 
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    driver = webdriver.PhantomJS('./webdrivers/phantomjs-mac')
+    webdriver_map = {
+        'darwin': './webdrivers/phantomjs-mac',
+        'linux': './webdrivers/phantomjs-linux',
+    }
+    if not webdriver_map.get(platform):
+        print('unsure wtf happened here')
+        os.exit(1)
+
+    driver = webdriver.PhantomJS(webdriver_map[platform])
     driver.set_page_load_timeout(30)
-    for side in ['SB', 'HB']:
-        print('starting with the {}s'.format(side))
-        for x in range(1, 10):
-            bill_identifier = '{}{}'.format(side, x)
-            if number_of_redirects > 50:
-                break
+    while True:
+        try:
+            for side in ['SB', 'HB']:
+                print('starting with the {}s'.format(side))
+                for x in range(1, 10):
+                    bill_identifier = '{}{}'.format(side, x)
+                    if number_of_redirects > 50:
+                        break
 
-            bill = william.retrieve_bill_info(driver, bill_identifier)
-            if not bill:
-                print('Nothing found for bill {}'.format(bill_identifier))
-                number_of_redirects += 1
-                continue
-            else:
-                number_of_redirects = 0
-                cur.execute("select * from bills where identifier = %s and archived is null", [bill.identifier])
+                    bill = william.retrieve_bill_info(driver, bill_identifier)
+                    if not bill:
+                        print('Nothing found for bill {}'.format(bill_identifier))
+                        number_of_redirects += 1
+                        continue
+                    else:
+                        number_of_redirects = 0
+                        cur.execute("select * from bills where identifier = %s and archived is null", [bill.identifier])
 
-                bill_from_db = cur.fetchone()
+                        bill_from_db = cur.fetchone()
 
-                if bill_from_db:
-                    bill_from_db = dict(bill_from_db)
-                    parsed_bill = populate_bill_from_db_dict(bill_from_db)
+                        if bill_from_db:
+                            bill_from_db = dict(bill_from_db)
+                            parsed_bill = populate_bill_from_db_dict(bill_from_db)
 
-                    if not bill.is_equal_to(parsed_bill):
-                        archive_bill(cur, conn, bill_from_db)
-                        insert_bill(cur, conn, bill)
-                else:
-                    insert_bill(cur, conn, bill)
-                print('successfully processed bill {}'.format(bill_identifier))
-                sleep(2.5)
-
-    driver.quit()
+                            if not bill.is_equal_to(parsed_bill):
+                                archive_bill(cur, conn, bill_from_db)
+                                insert_bill(cur, conn, bill)
+                        else:
+                            insert_bill(cur, conn, bill)
+                        print('successfully processed bill {}'.format(bill_identifier))
+                        sleep(2.5)
+        except Exception as e:
+            print('encountered this error: {}'.format(e))
+            driver.quit()
+            raise e
+            break

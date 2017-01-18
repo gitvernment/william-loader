@@ -103,12 +103,12 @@ def retrieve_bill_info(driver, bill_number, session='85R'):
     version = driver.find_element_by_xpath(VERSION_XPATH).text
     summary = driver.find_element_by_xpath(SUMMARY_XPATH).text
 
-    authors = driver.find_element_by_xpath(AUTHORS_XPATH).text.split('|')
+    authors = [x.strip() for x in driver.find_element_by_xpath(AUTHORS_XPATH).text.split('|')]
 
     # action_table = driver.find_element_by_xpath(ACTION_TABLE_XPATH).find_elements_by_tag_name('tr')
     # action_info = parse_action_table(action_table)
 
-    subjects = driver.find_element_by_xpath(SUBJECT_XPATH).text.split('\n')
+    subjects = [x.strip() for x in driver.find_element_by_xpath(SUBJECT_XPATH).text.split('\n')]
 
     # unreliable elements
     coauthors = retrieve_element_or_not(driver, COAUTHORS_XPATH, altering_func=modify_conferees)
