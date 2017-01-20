@@ -1,6 +1,7 @@
 import json
 import os
 from time import sleep
+import sys
 from sys import platform
 
 import psycopg2
@@ -56,7 +57,7 @@ if __name__ == "__main__":
         conn = psycopg2.connect(os.getenv('WILLIAM_POSTGRES_URL'))
     except:
         sentry_client.captureException()
-        os.exit(1)
+        sys.exit(1)
 
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     }
     if not webdriver_map.get(platform):
         sentry_client.captureMessage('Somehow the provided platform had no webdriver.')
-        os.exit(1)
+        sys.exit(1)
 
     driver = webdriver.PhantomJS(webdriver_map[platform])
     driver.set_page_load_timeout(30)
