@@ -8,6 +8,7 @@ import psycopg2.extras
 from selenium import webdriver
 
 from william import william
+from william.sentry import sentry_client
 
 
 def insert_bill(cursor, connection, bill):
@@ -51,12 +52,10 @@ def populate_bill_from_db_dict(bill_from_db):
     return db_bill
 
 if __name__ == "__main__":
-    number_of_redirects = 0
-
     try:
         conn = psycopg2.connect(os.getenv('WILLIAM_POSTGRES_URL'))
     except:
-        print("I am unable to connect to the database")
+        sentry_client.captureException()
         os.exit(1)
 
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -66,20 +65,22 @@ if __name__ == "__main__":
         'linux': './webdrivers/phantomjs-linux',
     }
     if not webdriver_map.get(platform):
-        print('unsure wtf happened here')
+        sentry_client.captureMessage('Somehow the provided platform had no webdriver.')
         os.exit(1)
 
     driver = webdriver.PhantomJS(webdriver_map[platform])
     driver.set_page_load_timeout(30)
     while True:
         try:
-            for side in ['SB', 'HB']:
+            for side in ['HB', 'HCR', 'SB', 'SCR']:
+                number_of_redirects = 0
                 print('starting with the {}s'.format(side))
-                for x in range(1, 10):
-                    bill_identifier = '{}{}'.format(side, x)
+                for x in range(1, 10000):
                     if number_of_redirects > 50:
                         break
 
+                    bill_identifier = '{}{}'.format(side, x)
+                    print('retrieving info for {}'.format(bill_identifier))
                     bill = william.retrieve_bill_info(driver, bill_identifier)
                     if not bill:
                         print('Nothing found for bill {}'.format(bill_identifier))
@@ -103,7 +104,7 @@ if __name__ == "__main__":
                         print('successfully processed bill {}'.format(bill_identifier))
                         sleep(2.5)
         except Exception as e:
-            print('encountered this error: {}'.format(e))
+            sentry_client.captureException()
             driver.quit()
             raise e
             break

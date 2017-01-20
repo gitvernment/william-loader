@@ -1,8 +1,10 @@
+import os
 import re
 
 import requests
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
+from .sentry import sentry_client
 from .models import Bill
 
 LAST_ACTION_XPATH = '//*[@id="cellLastAction"]'
@@ -91,13 +93,20 @@ def retrieve_bill_info(driver, bill_number, session='85R'):
     try:
         res = requests.get(url)
     except TimeoutException:
+        sentry_client.captureMessage('Request for bill {} timed out'.format(bill_number))
+        sentry_client.captureException()
         return None
 
     if len(res.history):
         # the state redirects to the search page when you enter a bill that doesn't exist.
         return None
 
-    driver.get(url)
+    try:
+        driver.get(url)
+    except:
+        sentry_client.captureException()
+        return None
+
 
     last_action = driver.find_element_by_xpath(LAST_ACTION_XPATH).text
     version = driver.find_element_by_xpath(VERSION_XPATH).text
