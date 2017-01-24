@@ -1,8 +1,8 @@
 import json
+import logging
 import os
-from time import sleep
 import sys
-from sys import platform
+from time import sleep
 
 import psycopg2
 import psycopg2.extras
@@ -10,6 +10,13 @@ from selenium import webdriver
 
 from william import william
 from william.sentry import sentry_client
+
+# thanku http://docs.python-guide.org/en/latest/writing/logging/
+logger = logging.getLogger()
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 
 def insert_bill(cursor, connection, bill):
@@ -32,6 +39,7 @@ def archive_bill(cursor, connection, bill):
     values = [bill['id']]
     cursor.execute(archiving_query, values)
     connection.commit()
+
 
 def populate_bill_from_db_dict(bill_from_db):
     db_bill = william.Bill(
@@ -65,26 +73,26 @@ if __name__ == "__main__":
         'darwin': './webdrivers/phantomjs-mac',
         'linux': './webdrivers/phantomjs-linux',
     }
-    if not webdriver_map.get(platform):
+    if not webdriver_map.get(sys.platform):
         sentry_client.captureMessage('Somehow the provided platform had no webdriver.')
         sys.exit(1)
 
-    driver = webdriver.PhantomJS(webdriver_map[platform])
+    driver = webdriver.PhantomJS(webdriver_map[sys.platform])
     driver.set_page_load_timeout(30)
     while True:
         try:
             for side in ['HB', 'HCR', 'SB', 'SCR']:
                 number_of_redirects = 0
-                print('starting with the {}s'.format(side))
+                logger.info('starting with the {}s'.format(side))
                 for x in range(1, 10000):
                     if number_of_redirects > 50:
                         break
 
                     bill_identifier = '{}{}'.format(side, x)
-                    print('retrieving info for {}'.format(bill_identifier))
+                    logger.info('retrieving info for {}'.format(bill_identifier))
                     bill = william.retrieve_bill_info(driver, bill_identifier)
                     if not bill:
-                        print('Nothing found for bill {}'.format(bill_identifier))
+                        logger.info('Nothing found for bill {}'.format(bill_identifier))
                         number_of_redirects += 1
                         continue
                     else:
@@ -102,7 +110,7 @@ if __name__ == "__main__":
                                 insert_bill(cur, conn, bill)
                         else:
                             insert_bill(cur, conn, bill)
-                        print('successfully processed bill {}'.format(bill_identifier))
+                        logger.info('successfully processed bill {}'.format(bill_identifier))
                         sleep(2.5)
         except Exception as e:
             sentry_client.captureException()
