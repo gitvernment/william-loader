@@ -111,7 +111,7 @@ if __name__ == "__main__":
                         else:
                             insert_bill(cur, conn, bill)
                         logger.info('successfully processed bill {}'.format(bill_identifier))
-                        sleep(2.5)
+                        sleep(5)
         except Exception as e:
             sentry_client.captureException()
             driver.quit()
